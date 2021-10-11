@@ -29,11 +29,11 @@ syscall           # switch to kernel mode
  * Parameters:
  *    param1 - the number to get the factorial of
  *
- * Return: the result of the factorial
+ * Return: the result of the factorial (stored in %rax)
  */
 .type factorial, @function
 factorial:
-# establish the stack frame
+# create the stack frame
 push %rbp       # push the current base pointer register
 mov %rsp, %rbp  # assign the value of stack pointer register 
                 # as the new value of the base pointer register
@@ -43,18 +43,29 @@ mov %rsp, %rbp  # assign the value of stack pointer register
 # copy the input to %rbx
 mov 16(%rbp), %rax  # copy input to %rax
 
+
 # if the input is less than or equals to 1 then we're done
 cmp $1, %rax
 jle return_factorial
 
+
 // n! = n * (n - 1)!
+# mov %rax, rbx # IMPORTANT: Never do this, it causes bugs
 dec %rax          # decrement the value of %rax by 1
 push %rax         # then call factorial with it
-call factorial    # the return of the function will be stored in %rax
+call factorial    # the value returned by the function will be stored in %rax
 
 mov 16(%rbp), %rbx  # copy the input to %rbx
 
-imul %rbx, %rax     # multiply the input to the result of factorial of input - 1
+# IMPORTANT:  You might ask; 
+#             Why pull the value again from the stack?
+#             Why not just copy the value of from %rax?
+#             Can we put the line above before the call to factorial?
+# ANSWER:     Always assume that after a function call, the values we stored
+#             in registers are altered or destroyed.
+#             Therefore we must pull refresh the values of registers after a function call.
+
+imul %rbx, %rax     # multiply the input to the result of factorial of (input - 1)
 
 return_factorial:
 mov %rbp, %rsp      # reset the %rsp back to its original value before the call
